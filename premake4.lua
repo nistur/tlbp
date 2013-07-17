@@ -1,10 +1,10 @@
-solution "template"
+solution "tlbp"
 language "C++"
 configurations { "Debug", "Release" }
 includedirs { "include", "src/include" }
 files { "include/**.h" }
 
-defines { "TMPL_BUILD" }
+defines { "TLBP_BUILD" }
 
 configuration "Debug"
 defines { "DEBUG" }
@@ -19,19 +19,19 @@ flags { "OptimizeSpeed",
 	"NoFramePointer" }
 targetdir "build/release"
 
-project "template"
+project "tlbp"
 kind "StaticLib"
 files { "src/**.c", "src/**.cpp" }
 
-project "template-dynamic"
+project "tlbp-dynamic"
 kind "SharedLib"
 files { "src/**.c", "src/**.cpp" }
-targetname "template"
+targetname "tlbp"
 
 project "tests"
 kind "ConsoleApp"
 files { "tests/**.cpp" }
-links { "template" }
+links { "tlbp" }
 configuration "Debug"
 postbuildcommands("build/debug/tests")
 configuration "Release"

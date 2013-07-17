@@ -1,13 +1,8 @@
-TEMPLATE
-========
+TLBP
+====
 
-This is a basic template for my library projects. It includes the my testsuite and the standard files.
+Tiny Little Bit Packer. Small lib for reading and writing buffers, including an interface for trying to pack data as small as possible.
 
-To use this template. All the files should probably be renamed as templ is a baaaaaad prefix for anything useful. However, it's a template. It works as such.
+Right now will write 8, 16, 32 and 64 bit signed and unsigned values to the buffer, byte aligned, and has the beginnings of packing 8 bit unsigned to as small as possible. 16, 32 and 64 bit, as well as signed types will follow.
 
-On linux it is possible to run the setup script to do the renaming eg (for a library called society):
-
-~~~~~~
-./setup.sh society soc SOC
-~~~~~~
-The first parameter is the name of the name of the library, soc and SOC are prefixes used in the library functions and defines
+Idea came from reading the SWF file spec.

@@ -1,8 +1,10 @@
-#include "tmpl.h"
+#include "tlbp.h"
 
-tmplReturn g_tmplError;
-const char* g_tmplErrors[] = 
+tlbpReturn g_tlbpError;
+const char* g_tlbpErrors[] = 
 {
     "Success",
     "Null context",
+    "Out of memory",
+    "Invalid buffer specified"
 };
