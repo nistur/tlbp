@@ -169,7 +169,7 @@ tlbpReturn tlbpWriteBU8(tlbpContext* context, bu8 val, u8* limit)
     if(lim == 0)
     {
         for(lim = 7; lim >= 0; --lim)
-            if(val & (1<<lim))
+            if(lim == 0 || val & (1<<lim))
                 break;
         // change from indices to numbers
         lim += 1;
@@ -217,15 +217,27 @@ tlbpReturn tlbpReadBU8(tlbpContext* context, bu8* val, u8 limit)
         tlbpReturn(OUT_OF_MEMORY);
 
     // how much of this byte
-    u8 amount = (8 - context->offset) > limit ? limit : 8 - context->offset;
-    *val = *context->ptr;
-    *val &= ~((1 << 8-amount) - 1);
-    *val >>= 8 - amount;
-    context->offset += amount;
-    while(context->offset >= 8)
+    *val = 0;
+    u8 prev = 0;
+    while(limit > 0)
     {
-        context->offset -= 8;
-        context->ptr += 1;
+        *val <<= prev;
+        u8 amount = (8 - context->offset) > limit ? limit : 8 - context->offset;
+        u8 pre_mask = (-1 ^ ((1<<(8-context->offset))-1));
+        u8 post_mask = (1<<(8-(context->offset + limit)))-1;
+
+        u8 byte = *context->ptr & (~pre_mask & ~post_mask);
+        byte >>= 8-(context->offset + limit);
+        *val |= byte;
+        
+        context->offset += amount;
+        while(context->offset >= 8)
+        {
+            context->offset -= 8;
+            context->ptr += 1;
+        }
+        limit -= amount;
+        prev = amount;
     }
 
     tlbpReturn(SUCCESS);

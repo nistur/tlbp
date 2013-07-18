@@ -45,7 +45,9 @@ TEST(ReadBU8, ReadWrite, 0,
 {
   tlbpInitContext(&m_data.context);
   tlbpSetBuffer(m_data.context, m_data.buffer, 256);
-  tlbpWriteBU8(m_data.context, 99, &m_data.limit);
+  m_data.limit = 4;
+  for(u8 i = 0; i < 10; ++i)
+    tlbpWriteBU8(m_data.context, i, &m_data.limit);
 },
 {
   tlbpTerminateContext(&m_data.context);
@@ -53,8 +55,11 @@ TEST(ReadBU8, ReadWrite, 0,
 {
   tlbpRewind(m_data.context);
   bu8 val = 0;
-  ASSERT(tlbpReadBU8(m_data.context, &val, m_data.limit) == TLBP_SUCCESS);
-  ASSERT(val == 99);
+  for(u8 i = 0; i < 10; ++i)
+  {
+    ASSERT(tlbpReadBU8(m_data.context, &val, m_data.limit) == TLBP_SUCCESS);
+    ASSERT(val == i);
+  }
 },
 {
   tlbpContext* context;
