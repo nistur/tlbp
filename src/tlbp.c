@@ -93,6 +93,11 @@ tlbpReturn tlbpTell(tlbpContext* context, u32* pos)
     tlbpReturn(SUCCESS);
 }
 
+TLBP_LIMIT_IMPLEMENT(U8,  u8);
+TLBP_LIMIT_IMPLEMENT(U16, u16);
+TLBP_LIMIT_IMPLEMENT(U32, u32);
+TLBP_LIMIT_IMPLEMENT(U64, u64);
+
 tlbpReturn tlbpWrite(tlbpContext* context, void* data, u32 size)
 {
     if(context == NULL)
@@ -104,6 +109,70 @@ tlbpReturn tlbpWrite(tlbpContext* context, void* data, u32 size)
 
     memcpy(context->ptr, data, size);
     context->ptr += size;
+
+    tlbpReturn(SUCCESS);
+}
+
+tlbpReturn tlbpWriteBits(tlbpContext* context, void* val, u8 limit)
+{
+    if(context == NULL)
+        tlbpReturn(NO_CONTEXT);
+    if(val == NULL)
+        tlbpReturn(NO_DATA);
+
+    u8* src = (u8*)val;
+    u8 offset = context->offset;
+    while(limit > 0)
+    {
+        u8 count = (8 - context->offset > limit) ? limit : 8 - context->offset;
+
+        u8 preMask = (-1 ^ ((1<<(8- context->offset))-1));
+        u8 postMask = (1<<(8- context->offset-count))-1;
+
+        *context->ptr = (*context->ptr & (preMask | postMask)) | // copy original contents
+                        (((*src >> offset) | (*(src-1) << 8 - offset)) & (~preMask & ~postMask));
+        // in theory this could copy from garbage before src[0] but the mask should solve problems
+
+        limit -= count;
+        context->offset += count;
+        while(context->offset >= 8)
+        {
+            context->offset -= 8;
+            context->ptr += 1;
+            src += 1;
+        }
+    }
+
+    tlbpReturn(SUCCESS);
+}
+
+tlbpReturn tlbpReadBits(tlbpContext* context, void* val, u8 limit)
+{
+    if(context == NULL)
+        tlbpReturn(NO_CONTEXT);
+    if(val == NULL)
+        tlbpReturn(NO_DATA);
+
+    u8* dst = (u8*)val;
+    while(limit > 0)
+    {
+        u8 count = MIN(8-context->offset, limit);
+        *dst <<= count;
+        //u8 preMask = (-1 ^ ((1<<(8-context->offset))-1));
+        //u8 postMask = (1<<(8-(context->offset + count)))-1;
+
+        *dst = *context->ptr << context->offset |
+                *(context->ptr+1) >> (8-context->offset);
+        
+        context->offset += MIN(8, count);
+        while(context->offset >= 8)
+        {
+            context->offset -= 8;
+            context->ptr += 1;
+            dst += 1;
+        }
+        limit -= count;
+    }
 
     tlbpReturn(SUCCESS);
 }
@@ -120,6 +189,58 @@ tlbpReturn tlbpRead(tlbpContext* context, void* data, u32 size)
     memcpy(data, context->ptr, size);
     context->ptr += size;
 
+    tlbpReturn(SUCCESS);
+}
+
+tlbpReturn tlbpWriteUBits(tlbpContext* context, void* val, u8 size, u8 limit)
+{
+    if(context == NULL)
+        tlbpReturn(NO_CONTEXT);
+    if(val == NULL)
+        tlbpReturn(NO_DATA);
+
+    u8 reqSize = ((limit / 8)*8 == limit) ? limit/8 : 1+(limit / 8);
+    u8* tmp = tlbpMallocArray(u8, reqSize);
+    u8 dSize = size - reqSize;
+    u8 shift = reqSize*8 - limit;
+
+    for(int i = 0; i < reqSize-1; ++i)
+        tmp[i] = ((u8*)val)[i] << shift |
+                ((u8*)val)[i+1] >> 8 - shift;
+    tmp[reqSize-1] = ((u8*)val)[reqSize-1] << shift;
+
+
+    tlbpWriteBits(context, tmp, limit);
+
+    tlbpFree(tmp);
+    return g_tlbpError;
+}
+
+tlbpReturn tlbpReadUBits(tlbpContext* context, void* val, u8 size, u8 limit)
+{
+    if(context == NULL)
+        tlbpReturn(NO_CONTEXT);
+    if(val == NULL)
+        tlbpReturn(NO_DATA);
+
+    u8 reqSize = ((limit / 8)*8 == limit) ? limit/8 : 1+(limit / 8);
+    u8 dSize = size - reqSize;
+    u8 shift = reqSize*8 - limit;
+
+    memset(val, 0, size);
+    u8* tmp = tlbpMallocArray(u8, reqSize);
+    if(tlbpReadBits(context, tmp, limit) != TLBP_SUCCESS)
+    {
+        tlbpFree(tmp);
+        return g_tlbpError;
+    }
+
+    for(int i = 1; i < reqSize; ++i)
+        ((u8*)val)[i] = tmp[i] >> shift |
+                              tmp[i-1] << 8-shift;
+    ((u8*)val)[0] = tmp[0] >> shift;
+
+    tlbpFree(tmp);
     tlbpReturn(SUCCESS);
 }
 
@@ -159,89 +280,15 @@ TLBP_READ_ARRAY_IMPLEMENT(S32, s32);
 TLBP_READ_IMPLEMENT      (S64, s64);
 TLBP_READ_ARRAY_IMPLEMENT(S64, s64);
 
-tlbpReturn tlbpWriteBU8(tlbpContext* context, bu8 val, u8* limit)
-{
-    if(context == NULL)
-        tlbpReturn(NO_CONTEXT);
+TLBP_WRITE_UBITS_IMPLEMENT(BU8,  bu8);
+TLBP_WRITE_UBITS_IMPLEMENT(BU16, bu16);
+TLBP_WRITE_UBITS_IMPLEMENT(BU32, bu32);
+TLBP_WRITE_UBITS_IMPLEMENT(BU64, bu64);
 
-    u8 lim = limit ? *limit : 0;
-
-    if(lim == 0)
-    {
-        for(lim = 7; lim >= 0; --lim)
-            if(lim == 0 || val & (1<<lim))
-                break;
-        // change from indices to numbers
-        lim += 1;
-    }
-
-    // check for out of memory
-    u32 pos;
-    tlbpTell(context, &pos);
-    if((context->size - pos) < sizeof(bu8))
-        tlbpReturn(OUT_OF_MEMORY);
-
-    // shift away the first bits, they're all 0 anyway
-    val <<= 8 - lim;
-
-    // first byte
-    bu8 curr_mask = (-1 ^ ((1<<(8-context->offset))-1));
-    *context->ptr = (*context->ptr & curr_mask) | val >> context->offset;
-
-    // second byte
-    // we don't care about any trailing 0s
-    context->ptr[1] = val << 8-context->offset;
-
-    // add on the amount to the offset
-    context->offset += lim;
-    while(context->offset >= 8)
-    {
-        context->offset -= 8;
-        context->ptr += 1;
-    }
-    if(limit) *limit = lim;
-
-    tlbpReturn(SUCCESS);
-}
-    
-tlbpReturn tlbpReadBU8(tlbpContext* context, bu8* val, u8 limit)
-{
-    if(context == NULL)
-        tlbpReturn(NO_CONTEXT);
-    if(val == NULL)
-        tlbpReturn(NO_DATA);
-    // check for out of memory
-    u32 pos;
-    tlbpTell(context, &pos);
-    if((context->size - pos) < sizeof(bu8))
-        tlbpReturn(OUT_OF_MEMORY);
-
-    // how much of this byte
-    *val = 0;
-    u8 prev = 0;
-    while(limit > 0)
-    {
-        *val <<= prev;
-        u8 amount = (8 - context->offset) > limit ? limit : 8 - context->offset;
-        u8 pre_mask = (-1 ^ ((1<<(8-context->offset))-1));
-        u8 post_mask = (1<<(8-(context->offset + limit)))-1;
-
-        u8 byte = *context->ptr & (~pre_mask & ~post_mask);
-        byte >>= 8-(context->offset + limit);
-        *val |= byte;
-        
-        context->offset += amount;
-        while(context->offset >= 8)
-        {
-            context->offset -= 8;
-            context->ptr += 1;
-        }
-        limit -= amount;
-        prev = amount;
-    }
-
-    tlbpReturn(SUCCESS);
-}
+TLBP_READ_UBITS_IMPLEMENT(BU8,  bu8);
+TLBP_READ_UBITS_IMPLEMENT(BU16, bu16);
+TLBP_READ_UBITS_IMPLEMENT(BU32, bu32);
+TLBP_READ_UBITS_IMPLEMENT(BU64, bu64);
 
 const char* tlbpError()
 {

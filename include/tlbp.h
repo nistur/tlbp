@@ -38,6 +38,11 @@ TLBP_EXPORT tlbpReturn   tlbpSetBuffer       (tlbpContext* context, u8* buffer, 
 TLBP_EXPORT tlbpReturn   tlbpRewind          (tlbpContext* context);
 TLBP_EXPORT tlbpReturn   tlbpTell            (tlbpContext* context, u32* pos);
 
+TLBP_EXPORT tlbpReturn   tlbpLimitU8         (u8* vals, u32 num, u8* lim);
+TLBP_EXPORT tlbpReturn   tlbpLimitU16        (u16* vals, u32 num, u8* lim);
+TLBP_EXPORT tlbpReturn   tlbpLimitU32        (u32* vals, u32 num, u8* lim);
+TLBP_EXPORT tlbpReturn   tlbpLimitU64        (u64* vals, u32 num, u8* lim);
+
 //------------------------------------------------------------------------------------------
 // Write
 //------------------------------------------------------------------------------------------
@@ -60,8 +65,9 @@ TLBP_EXPORT tlbpReturn   tlbpWriteS64        (tlbpContext* context, s64 val);
 TLBP_EXPORT tlbpReturn   tlbpWriteS64Array   (tlbpContext* context, s64* vals, u32 num);
 //------------------------------------------------------------------------------------------
 TLBP_EXPORT tlbpReturn   tlbpWriteBU8        (tlbpContext* context, bu8 val, u8* limit);
-//------------------------------------------------------------------------------------------
-TLBP_EXPORT tlbpReturn   tlbpReadBU8         (tlbpContext* context, bu8* val, u8 limit);
+TLBP_EXPORT tlbpReturn   tlbpWriteBU16       (tlbpContext* context, bu16 val, u8* limit);
+TLBP_EXPORT tlbpReturn   tlbpWriteBU32       (tlbpContext* context, bu32 val, u8* limit);
+TLBP_EXPORT tlbpReturn   tlbpWriteBU64       (tlbpContext* context, bu64 val, u8* limit);
 //------------------------------------------------------------------------------------------
 
 
@@ -85,6 +91,11 @@ TLBP_EXPORT tlbpReturn   tlbpReadS32        (tlbpContext* context, s32* val);
 TLBP_EXPORT tlbpReturn   tlbpReadS32Array   (tlbpContext* context, s32* vals, u32 num);
 TLBP_EXPORT tlbpReturn   tlbpReadS64        (tlbpContext* context, s64* val);
 TLBP_EXPORT tlbpReturn   tlbpReadS64Array   (tlbpContext* context, s64* vals, u32 num);
+//------------------------------------------------------------------------------------------
+TLBP_EXPORT tlbpReturn   tlbpReadBU8         (tlbpContext* context, bu8* val, u8 limit);
+TLBP_EXPORT tlbpReturn   tlbpReadBU16        (tlbpContext* context, bu16* val, u8 limit);
+TLBP_EXPORT tlbpReturn   tlbpReadBU32        (tlbpContext* context, bu32* val, u8 limit);
+TLBP_EXPORT tlbpReturn   tlbpReadBU64        (tlbpContext* context, bu64* val, u8 limit);
 //------------------------------------------------------------------------------------------
 
 TLBP_EXPORT const char*  tlbpError();

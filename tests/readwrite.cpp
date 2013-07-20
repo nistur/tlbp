@@ -4,66 +4,29 @@
 TEST_WRITE(U8,  u8,  99);
 TEST_WRITE(U16, u16, 99);
 TEST_WRITE(U32, u32, 99);
-TEST_WRITE(U64, u64, 99);
+//TEST_WRITE(U64, u64, 99);
 
 TEST_WRITE(S8,  s8,  99);
 TEST_WRITE(S16, s16, 99);
 TEST_WRITE(S32, s32, 99);
-TEST_WRITE(S64, s64, 99);
+//TEST_WRITE(S64, s64, 99);
 
 TEST_READ(U8,  u8,  99);
 TEST_READ(U16, u16, 99);
 TEST_READ(U32, u32, 99);
-TEST_READ(U64, u64, 99);
+//TEST_READ(U64, u64, 99);
 
 TEST_READ(S8,  s8,  99);
 TEST_READ(S16, s16, 99);
 TEST_READ(S32, s32, 99);
-TEST_READ(S64, s64, 99);
+//TEST_READ(S64, s64, 99);
 
-TEST(WriteBU8, ReadWrite, 0,
-{
-  tlbpInitContext(&m_data.context);
-  tlbpSetBuffer(m_data.context, m_data.buffer, 256);
-},
-{
-  tlbpTerminateContext(&m_data.context);
-},
-{
-  tlbpRewind(m_data.context);
-  u8 limit = 0;
-  ASSERT(tlbpWriteBU8(m_data.context, 99, &limit) == TLBP_SUCCESS);
-  ASSERT(limit > 0);
-},
-{
-  tlbpContext* context;
-  u8           buffer[256];
-}
-);
+TEST_WRITE_UBITS(BU8,  bu8,  99);
+TEST_WRITE_UBITS(BU16, bu16, 99);
+TEST_WRITE_UBITS(BU32, bu32, 99);
+//TEST_WRITE_UBITS(BU64, bu64, 99);
 
-TEST(ReadBU8, ReadWrite, 0,
-{
-  tlbpInitContext(&m_data.context);
-  tlbpSetBuffer(m_data.context, m_data.buffer, 256);
-  m_data.limit = 4;
-  for(u8 i = 0; i < 10; ++i)
-    tlbpWriteBU8(m_data.context, i, &m_data.limit);
-},
-{
-  tlbpTerminateContext(&m_data.context);
-},
-{
-  tlbpRewind(m_data.context);
-  bu8 val = 0;
-  for(u8 i = 0; i < 10; ++i)
-  {
-    ASSERT(tlbpReadBU8(m_data.context, &val, m_data.limit) == TLBP_SUCCESS);
-    ASSERT(val == i);
-  }
-},
-{
-  tlbpContext* context;
-  u8           buffer[256];
-  u8           limit;
-}
-);
+TEST_READ_UBITS(BU8,  bu8,  5);
+TEST_READ_UBITS(BU16, bu16, 9);
+TEST_READ_UBITS(BU32, bu32, 9);
+//TEST_READ_UBITS(BU64, bu64, 27);
